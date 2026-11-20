@@ -55,6 +55,126 @@ Mobil düzeni PC'de denemek için: **F12 → Cihaz araç çubuğu (Ctrl+Shift+M)
 
 ---
 
+## 2.5) `icons` klasörü — oluşturmaya gerek yok, ama nasıl yeniden üretilir?
+
+`icons` klasörü **paketin içinde hazır geliyor**; hiçbir şey oluşturmanız gerekmez.
+Zip'i açtığınızda `pwa/icons/` klasörü şu 6 dosyayla birlikte gelir:
+
+| Dosya | Boyut | Nerede kullanılır |
+|---|---|---|
+| `icon-192.png` | 192×192 | Android ana ekran ikonu |
+| `icon-512.png` | 512×512 | Yüksek çözünürlük / mağaza görseli |
+| `maskable-192.png` | 192×192 | Android uyarlanabilir (kırpılmaz) ikon |
+| `maskable-512.png` | 512×512 | Android uyarlanabilir ikon (büyük) |
+| `apple-touch-icon.png` | 180×180 | iPhone / iPad ana ekran |
+| `favicon-32.png` | 32×32 | Tarayıcı sekmesi simgesi |
+
+Bu dosyalar `manifest.webmanifest` ve `index.html` içinde **zaten bu adlarla** çağrılıyor.
+
+### GitHub'a yüklerken
+`icons` klasörünü normal bir klasör gibi sürükleyip bırakabilirsiniz. GitHub web arayüzü
+**boş klasör** kabul etmez; bu klasörün içinde 6 PNG olduğu için sorun çıkmaz.
+Dosyaları tek tek yüklerken **adlarını değiştirmeyin** (küçük harf, tireler korunmalı).
+
+### Kendi logonuzla değiştirmek isterseniz
+Paketin yanındaki `araclar` klasöründe hazır bir üretici var:
+
+```bash
+# 1) Yerleşik kalkan simgesiyle (mavi zemin)
+cd araclar
+python icon-olustur.py --out ../pwa/icons
+
+# 2) Kendi logonuzla (şeffaf zeminli PNG önerilir) + kendi renkleriniz
+python icon-olustur.py --logo logo.png --bg "#1d4ed8" "#312e81" --out ../pwa/icons
+```
+
+* Windows'ta `araclar\icon-olustur.bat` dosyasına çift tıklamanız yeterli.
+* Gerekli tek şey Python 3 + Pillow: `pip install pillow`
+* `--bg` iki renk alır (üst → alt degrade). `maskable` ikonlarda logo, Android'in kırptığı
+  kenarlardan etkilenmemesi için otomatik olarak küçültülür (%46 güvenli alan).
+* Üretim sonrası `icons` klasörünü GitHub'a yeniden yükleyin; tarayıcı eski ikonu önbellekte
+  tutabileceği için uygulamayı kapatıp açın (veya `sw.js` içindeki `VERSION` değerini artırın).
+
+### İkonlar hiç görünmezse (kontrol listesi)
+1. Dosya adları birebir aynı mı? (`Icon-192.PNG` değil → `icon-192.png`)
+2. `icons` klasörü `index.html` ile **aynı** dizinde mi?
+3. Adres çubuğunda `.../icons/icon-192.png` açılıyor mu? (404 ise yol yanlış)
+4. Android'de "Ana ekrana ekle"den sonra ikon değişmediyse: uygulamayı kaldırıp yeniden kurun.
+
+---
+
+## 2.6) `vendor` ve `orijinal` klasörleri — hazır gelir, elle oluşturulmaz
+
+İki klasör de paketin **içinde dolu hâlde** gelir; GitHub'da "klasör oluştur" demenize gerek yok.
+GitHub, içinde dosya olan klasörleri yükleme sırasında kendisi oluşturur.
+
+### `vendor/` — 19 dosya, ~2,5 MB (uygulamanın çevrimdışı kütüphaneleri)
+
+```
+vendor/
+├── tailwind.js                     ← Tailwind CSS (CDN yerine yerel)
+├── xlsx.full.min.js                ← Excel oku/yaz (SheetJS 0.18.5)
+├── fontawesome/
+│   ├── css/all.min.css             ← simge seti (6.4.0)
+│   └── webfonts/                   ← 8 font dosyası (.woff2 + .ttf)
+└── inter/
+    ├── inter.css                   ← Inter yazı tipi tanımları
+    └── fonts/                      ← 7 woff2 dosyası
+```
+
+`index.html` bu dosyaları **göreli** yollarla çağırır: `vendor/tailwind.js`,
+`vendor/fontawesome/css/all.min.css`, `vendor/inter/inter.css`, `vendor/xlsx.full.min.js`.
+`sw.js` da aynı dosyaları önbelleğe alır (çevrimdışı çalışma).
+
+**Sıfırdan yeniden indirmek isterseniz** (`araclar` klasöründe):
+```bash
+cd araclar
+python vendor-kur.py --out ../pwa/vendor     # Linux/macOS: ./vendor-kur.sh
+```
+Windows'ta `araclar\vendor-kur.bat`. Betik şunları indirir: Tailwind, SheetJS, FontAwesome
+(css + 8 font) ve Google Fonts'tan Inter (css + 7 woff2) — ardından klasör yapısı pakettekiyle
+birebir aynı olur. Python 3 dışında bir şey gerekmez.
+
+### `orijinal/` — 1 dosya, 218 KB (yedek)
+
+`orijinal/evrak_tahkikat_duzeltilmis.html`, sizin gönderdiğiniz **hiç dokunulmamış** dosyadır.
+Yalnızca yedek/karşılaştırma amaçlıdır, uygulama tarafından kullanılmaz — silmeniz de sorun olmaz.
+Yeniden oluşturmak için: zip içindeki dosyayı bu klasöre kopyalayın veya GitHub'da
+**Add file → Upload files** ile sürükleyin.
+
+### GitHub'a yüklemenin en kolay iki yolu
+
+**A) Sürükle-bırak (önerilen):** zip'i bilgisayarda açın → `pwa` klasörünün **içindeki**
+dosya ve klasörlerin tümünü seçin → GitHub deposunda **Add file → Upload files** alanına
+sürükleyin → alt klasörler (`vendor/...`, `orijinal/...`, `icons/...`) kendiliğinden oluşur →
+**Commit changes**. Not: Chrome klasör sürüklemeyi destekler; desteklemeyen tarayıcıda
+tek tek klasör yükleyin (`vendor` gibi) veya Git komutunu kullanın.
+
+**B) Git komutu (en sağlamı):**
+```bash
+cd pwa
+git init
+git add .
+git commit -m "Pazarkule KIBA PWA"
+git branch -M main
+git remote add origin https://github.com/KULLANICI/DEPO.git
+git push -u origin main
+```
+`git add .` boş klasör kavramı olmadığı için ne varsa (vendor, icons, orijinal dâhil) eksiksiz
+gönderir. Nokta ile başlayan `.nojekyll` ve `.github` dosyaları da dâhildir.
+
+### Yükleme sonrası 30 saniyelik doğrulama
+Depoda şu üç adresi açın; hepsi görünüyorsa kurulum tamamdır:
+* `.../vendor/tailwind.js`
+* `.../vendor/fontawesome/webfonts/fa-solid-900.woff2`
+* `.../orijinal/evrak_tahkikat_duzeltilmis.html`
+
+Sayfa stilsiz/simgesiz görünüyorsa neredeyse her zaman sebep şudur: `vendor` klasörü
+`index.html` ile aynı seviyede değil (bir üst klasörde ya da `assets/vendor` altında kalmış).
+`index.html`'in yanında olmalı.
+
+---
+
 ## 3) GitHub'a yükleme ve yayınlama (adım adım)
 
 1. GitHub'da yeni bir depo (repository) oluşturun — örn. `pazarkule-kiba`.
