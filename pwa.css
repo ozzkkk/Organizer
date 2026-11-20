@@ -1,0 +1,910 @@
+/* ==========================================================================
+   Pazarkule KİBA - PWA katmanı (mobil / tablet)
+   --------------------------------------------------------------------------
+   KURAL: Masaüstü görünümü değişmez.
+   - Bu dosyadaki tüm düzen kuralları  html.mobile-layout  (genişlik < 1024px)
+     sınıfı altında çalışır. 1024 px ve üzerinde (PC / masaüstü) hiçbir kural
+     devreye girmez; sayfa orijinal dosyadaki hâliyle birebir aynı görünür.
+   - Tablet ve telefonlarda: üst uygulama çubuğu, alt sekme çubuğu, kaydırmalı
+     yan menü (çekmece) ve tabloların yerine dokunmaya uygun kart listesi.
+   ========================================================================== */
+
+:root {
+    --kiba-bn: 62px;            /* alt sekme çubuğu yüksekliği */
+    --kiba-sheet-bg: #ffffff;
+    --kiba-sheet-text: #0f172a;
+}
+
+/* ---------------------------------------------------------------- ORTAK --- */
+/* Dokunmatik cihazlarda tablo kaydırma ve daha rahat dokunma hedefleri */
+html.touch-device .kiba-scrollx {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+html.touch-device .resizer {
+    width: 16px;
+    right: -8px;
+}
+
+html.touch-device .resizer::before {
+    left: 7px;
+    background: repeating-linear-gradient(to bottom, #cbd5e1 0 3px, transparent 3px 6px);
+    opacity: .55;
+}
+
+/* Uzun basınca açılan ipucu balonu (dokunmatikte title yerine) */
+#kibaTip {
+    position: fixed;
+    z-index: 200;
+    max-width: 78vw;
+    background: #0f172a;
+    color: #f8fafc;
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.35;
+    padding: 7px 10px;
+    border-radius: 9px;
+    box-shadow: 0 8px 24px rgba(2, 6, 23, .45);
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -4px);
+    transition: opacity .14s ease;
+}
+
+#kibaTip.show { opacity: 1; }
+
+/* Çekilen kategori/çöp hedefi için hayalet etiket */
+.kiba-drag-ghost {
+    position: fixed;
+    z-index: 210;
+    pointer-events: none;
+    background: #0f172a;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 12px;
+    border-radius: 999px;
+    box-shadow: 0 8px 22px rgba(2, 6, 23, .4);
+    transform: translate(-50%, -140%);
+    opacity: .95;
+    white-space: nowrap;
+}
+
+.kiba-drop-hot {
+    outline: 3px solid #22c55e !important;
+    outline-offset: -3px;
+    background-color: rgba(34, 197, 94, .12) !important;
+}
+
+/* Yeni oluşturulan kutu öğeleri varsayılan olarak gizli */
+.kiba-appbar,
+.kiba-bn,
+.kiba-fab,
+.kiba-scrim,
+.kiba-sheet,
+.kiba-mlist,
+#kibaDrawerClose {
+    display: none;
+}
+
+/* ------------------------------------------------- MOBİL / TABLET DÜZEN --- */
+/* Kural seti: genişlik < 1024px  VEYA  yatay tutulan telefon (kısa ekran) */
+@media (max-width: 1023.98px), (max-height: 500px) and (max-width: 1179.98px) {
+
+    /* --- Genel yerleşim --- */
+    html.mobile-layout,
+    html.mobile-layout body {
+        height: 100%;
+        overflow: hidden;
+    }
+
+    html.mobile-layout main {
+        min-width: 0;
+        width: 100%;
+    }
+
+    html.mobile-layout main > header {
+        /* Orijinal başlık çubuğu yerine uygulama çubuğu kullanılır */
+        display: none !important;
+    }
+
+    html.mobile-layout #contentArea {
+        padding: 12px 12px calc(var(--kiba-bn) + 26px + env(safe-area-inset-bottom)) 12px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* --- Üst uygulama çubuğu --- */
+    html.mobile-layout .kiba-appbar {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 30;
+        background: #0f172a;
+        color: #fff;
+        padding: calc(env(safe-area-inset-top) + 5px) 6px 5px 6px;
+        min-height: 52px;
+        box-shadow: 0 2px 12px rgba(2, 6, 23, .35);
+    }
+
+    html.mobile-layout .kiba-appbar-title {
+        flex: 1;
+        min-width: 0;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: .01em;
+        color: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    html.mobile-layout .kiba-appbar-title i {
+        font-size: 13px;
+    }
+
+    html.mobile-layout .kiba-icon-btn {
+        width: 42px;
+        height: 42px;
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        color: #cbd5e1;
+        font-size: 16px;
+        background: transparent;
+        border: 0;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    html.mobile-layout .kiba-icon-btn:active {
+        background: rgba(148, 163, 184, .22);
+        color: #fff;
+    }
+
+    /* --- Yan menü: kaydırmalı çekmece --- */
+    html.mobile-layout aside.no-print {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 288px;
+        max-width: 86vw;
+        z-index: 80;
+        transform: translateX(-102%);
+        transition: transform .26s cubic-bezier(.4, 0, .2, 1);
+        box-shadow: 12px 0 40px rgba(2, 6, 23, .5);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    html.mobile-layout.sb-open aside.no-print {
+        transform: none;
+    }
+
+    html.mobile-layout .kiba-scrim {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 79;
+        background: rgba(2, 6, 23, .55);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .24s ease;
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+    }
+
+    html.mobile-layout.sb-open .kiba-scrim {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    html.mobile-layout #kibaDrawerClose {
+        display: inline-flex;
+        position: absolute;
+        top: calc(env(safe-area-inset-top) + 10px);
+        right: 8px;
+        width: 34px;
+        height: 34px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        color: #94a3b8;
+        background: rgba(148, 163, 184, .12);
+        z-index: 3;
+    }
+
+    /* Çekmecedeki menü öğeleri parmakla daha rahat seçilsin */
+    html.mobile-layout aside.no-print #nav-evrak,
+    html.mobile-layout aside.no-print #nav-tahkikat,
+    html.mobile-layout aside.no-print #nav-kiba,
+    html.mobile-layout aside.no-print #nav-notlar {
+        padding-top: .75rem;
+        padding-bottom: .75rem;
+        font-size: .8rem;
+    }
+
+    /* Çekmecede hava durumu / saat / takvim widget'ları alta sıkışmasın */
+    html.mobile-layout aside.no-print > div.mt-auto {
+        margin-top: 16px !important;
+    }
+
+    /* --- Alt sekme çubuğu --- */
+    html.mobile-layout .kiba-bn {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 40;
+        background: #0f172a;
+        border-top: 1px solid #1e293b;
+        padding: 5px 5px calc(5px + env(safe-area-inset-bottom)) 5px;
+        box-shadow: 0 -6px 22px rgba(2, 6, 23, .3);
+    }
+
+    html.mobile-layout .kiba-bn button {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        padding: 7px 2px 6px;
+        border-radius: 12px;
+        color: #94a3b8;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .01em;
+        background: transparent;
+        border: 0;
+        -webkit-tap-highlight-color: transparent;
+        transition: background .15s, color .15s;
+    }
+
+    html.mobile-layout .kiba-bn button i {
+        font-size: 16px;
+        line-height: 1;
+    }
+
+    html.mobile-layout .kiba-bn button:active {
+        background: rgba(148, 163, 184, .16);
+    }
+
+    html.mobile-layout .kiba-bn button.active {
+        color: #fff;
+        background: #1d4ed8;
+        box-shadow: 0 6px 16px rgba(29, 78, 216, .38);
+    }
+
+    /* --- Hızlı ekleme (FAB) --- */
+    html.mobile-layout .kiba-fab {
+        display: flex;
+        position: fixed;
+        right: 14px;
+        bottom: calc(var(--kiba-bn) + 18px + env(safe-area-inset-bottom));
+        z-index: 45;
+        width: 56px;
+        height: 56px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 0;
+        background: linear-gradient(145deg, #3b82f6, #1d4ed8);
+        color: #fff;
+        font-size: 20px;
+        box-shadow: 0 12px 26px rgba(37, 99, 235, .45);
+        -webkit-tap-highlight-color: transparent;
+        transition: transform .12s ease;
+    }
+
+    html.mobile-layout .kiba-fab:active {
+        transform: scale(.94);
+    }
+
+    html.mobile-layout .kiba-fab.hidden {
+        display: none !important;
+    }
+
+    /* --- İşlem çubuğu: arama alanı kendi satırında, düğmeler tam genişlik --- */
+    html.mobile-layout #tabContent-evrak > .no-print,
+    html.mobile-layout #tabContent-tahkikat > .no-print,
+    html.mobile-layout #tabContent-kiba > .no-print {
+        flex-wrap: wrap;
+    }
+
+    html.mobile-layout #tabContent-evrak > .no-print > div:last-child,
+    html.mobile-layout #tabContent-tahkikat > .no-print > div:last-child,
+    html.mobile-layout #tabContent-kiba > .no-print > div:last-child {
+        flex: 1 1 100%;
+        width: 100% !important;
+    }
+
+    html.mobile-layout #tabContent-evrak > .no-print > div:first-child,
+    html.mobile-layout #tabContent-tahkikat > .no-print > div:first-child,
+    html.mobile-layout #tabContent-kiba > .no-print > div:first-child {
+        width: 100% !important;
+    }
+
+    /* --- Tablolar yerine kart listesi --- */
+    html.mobile-layout .kiba-table-wrap {
+        display: none !important;
+    }
+
+    html.mobile-layout .kiba-mlist {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px 10px 72px;
+    }
+
+    .km-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid transparent;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+    }
+
+    .km-card.km-crit {
+        border-left-color: #e11d48;
+        background: #fff1f2;
+    }
+
+    .km-card.km-warn {
+        border-left-color: #f59e0b;
+        background: #fffbeb;
+    }
+
+    .km-card.km-done {
+        border-left-color: #cbd5e1;
+        background: #f8fafc;
+    }
+
+    .km-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 12px;
+        background: rgba(241, 245, 249, .75);
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .km-idx {
+        flex-shrink: 0;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 7px;
+        background: #e2e8f0;
+        color: #475569;
+        font-size: 10.5px;
+        font-weight: 800;
+    }
+
+    .km-badge {
+        flex: 1;
+        min-width: 0;
+        font-size: 13px;
+        font-weight: 800;
+        color: #1d4ed8;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .km-card.km-done .km-badge {
+        color: #64748b;
+        text-decoration: line-through;
+    }
+
+    .km-check {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        padding-left: 4px;
+    }
+
+    .km-check input[type="checkbox"] {
+        width: 21px;
+        height: 21px;
+        margin: 0;
+    }
+
+    .km-fields {
+        display: flex;
+        flex-direction: column;
+        padding: 2px 12px 4px;
+    }
+
+    .km-field {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 7px 0;
+        border-bottom: 1px dashed #eef2f7;
+        font-size: 12.5px;
+        line-height: 1.4;
+    }
+
+    .km-field:last-child {
+        border-bottom: 0;
+    }
+
+    .km-field.km-empty {
+        display: none;
+    }
+
+    .km-field.km-wide {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .km-label {
+        flex: 0 0 38%;
+        max-width: 40%;
+        color: #64748b;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        padding-top: 2px;
+    }
+
+    .km-field.km-wide .km-label {
+        flex: none;
+        max-width: none;
+    }
+
+    .km-val {
+        flex: 1;
+        min-width: 0;
+        color: #0f172a;
+        overflow-wrap: anywhere;
+    }
+
+    .km-val .whitespace-nowrap {
+        white-space: normal !important;
+    }
+
+    .km-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 12px;
+        background: rgba(248, 250, 252, .9);
+        border-top: 1px solid #eef2f7;
+    }
+
+    .km-actions > div {
+        display: flex;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .km-actions button {
+        flex: 1 1 0;
+        min-height: 40px;
+        padding: 8px 6px !important;
+        border-radius: 10px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .km-actions button i {
+        font-size: 14px !important;
+    }
+
+    /* Katlanabilir kart: ilk 4 alan görünür */
+    .km-card.km-collapsed .km-field.km-extra {
+        display: none;
+    }
+
+    .km-more {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        width: 100%;
+        padding: 10px 12px;
+        border: 0;
+        border-top: 1px solid #eef2f7;
+        background: rgba(248, 250, 252, .9);
+        color: #1d4ed8;
+        font-size: 12px;
+        font-weight: 700;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .km-more i {
+        font-size: 10px;
+    }
+
+    .km-more:active {
+        background: #f1f5f9;
+    }
+
+    .km-card.km-selected {
+        outline: 2px solid #2563eb;
+        outline-offset: 1px;
+    }
+
+    body.dark .km-more {
+        background: rgba(15, 23, 42, .6);
+        border-top-color: #2b3a55;
+        color: #93c5fd;
+    }
+
+    /* --- Koyu tema uyumu (kartlar) --- */
+    body.dark .km-card {
+        background: #111c33;
+        border-color: #2b3a55;
+    }
+
+    body.dark .km-card.km-crit {
+        background: #2a1420;
+        border-left-color: #fb7185;
+    }
+
+    body.dark .km-card.km-warn {
+        background: #2a2213;
+        border-left-color: #fbbf24;
+    }
+
+    body.dark .km-card.km-done {
+        background: #0f172a;
+        border-left-color: #334155;
+    }
+
+    body.dark .km-head {
+        background: rgba(15, 23, 42, .55);
+        border-bottom-color: #2b3a55;
+    }
+
+    body.dark .km-idx {
+        background: #263248;
+        color: #cbd5e1;
+    }
+
+    body.dark .km-badge {
+        color: #93c5fd;
+    }
+
+    body.dark .km-label {
+        color: #94a3b8;
+    }
+
+    body.dark .km-val {
+        color: #e2e8f0;
+    }
+
+    body.dark .km-field {
+        border-bottom-color: #1e293b;
+    }
+
+    body.dark .km-actions {
+        background: rgba(15, 23, 42, .6);
+        border-top-color: #2b3a55;
+    }
+
+    /* Tablet (600px ve üzeri): kartlar iki sütun hâlinde, daha az boşlukla */
+    @media (min-width: 620px) {
+        html.mobile-layout .kiba-mlist {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-items: start;
+            gap: 12px;
+        }
+
+        .km-label {
+            flex: 0 0 32%;
+            max-width: 34%;
+        }
+
+        .km-field {
+            font-size: 13px;
+        }
+    }
+
+    /* Notlar panosu telefonda taşmasın */
+    html.mobile-layout #stickyNotesContainer {
+        min-height: 420px !important;
+    }
+
+    /* Modallar tam ekrana yakın ve kaydırılabilir olsun */
+    html.mobile-layout .fixed.inset-0 > div {
+        max-height: 92dvh !important;
+    }
+
+    html.mobile-layout .fixed.inset-0 > div > form,
+    html.mobile-layout .fixed.inset-0 > div > div {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Formlarda Kaydet / İptal düğmeleri ekranın altında sabit dursun */
+    html.mobile-layout .fixed.inset-0 form > div:last-child[class*="col-span"] {
+        position: sticky;
+        bottom: 0;
+        z-index: 5;
+        margin-top: 6px !important;
+        padding: 10px 0 6px !important;
+        background: #fff;
+        box-shadow: 0 -8px 14px -8px rgba(15, 23, 42, .18);
+    }
+
+    html.mobile-layout .fixed.inset-0 form > div:last-child[class*="col-span"] button {
+        min-height: 42px;
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    body.dark html.mobile-layout .fixed.inset-0 form > div:last-child[class*="col-span"],
+    html.mobile-layout body.dark .fixed.inset-0 form > div:last-child[class*="col-span"] {
+        background: #111c33;
+    }
+
+    /* Form alanları parmakla rahat doldurulsun (iOS otomatik yakınlaştırmasını da engeller) */
+    html.mobile-layout input:not([type="checkbox"]):not([type="radio"]),
+    html.mobile-layout select,
+    html.mobile-layout textarea {
+        font-size: 16px;
+    }
+
+    html.mobile-layout input[type="checkbox"],
+    html.mobile-layout input[type="radio"] {
+        width: 19px;
+        height: 19px;
+    }
+
+    /* Tablo içi serbest metin alanları (özel sütunlar) kart içinde tam genişlik */
+    .km-val input[type="text"] {
+        font-size: 14px !important;
+        padding: 4px 2px;
+    }
+
+    /* Yapışkan notlar: dokunma hedefleri */
+    .sticky-note {
+        touch-action: none;
+    }
+
+    .sticky-note .sticky-head {
+        padding: 8px 8px 4px !important;
+    }
+
+    .sticky-note .sticky-head button {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 14px !important;
+    }
+
+    .sticky-note textarea {
+        font-size: 13px !important;
+    }
+
+    .sticky-resize {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
+    /* Arama alanları ve işlem çubuğu */
+    html.mobile-layout #searchEvrakInput,
+    html.mobile-layout #searchTahkikatInput,
+    html.mobile-layout #searchKibaInput {
+        font-size: 16px;
+    }
+}
+
+/* Yatay tutulan telefonda alt çubuk daha ince olsun (dikey yer kazanılır) */
+@media (max-height: 500px) and (max-width: 1179.98px) {
+    :root { --kiba-bn: 52px; }
+
+    html.mobile-layout .kiba-bn button {
+        flex-direction: row;
+        gap: 7px;
+        padding: 6px 4px;
+        font-size: 11px;
+    }
+
+    html.mobile-layout .kiba-bn button i {
+        font-size: 14px;
+    }
+
+    html.mobile-layout .kiba-fab {
+        width: 50px;
+        height: 50px;
+        font-size: 18px;
+        bottom: calc(var(--kiba-bn) + 14px + env(safe-area-inset-bottom));
+    }
+}
+
+/* ------------------------------- AYAR / İŞLEM SAYFASI (BOTTOM SHEET) --- */
+.kiba-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+}
+
+.kiba-sheet.open {
+    display: block;
+}
+
+.kiba-sheet-bg {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, .55);
+    opacity: 0;
+    transition: opacity .22s ease;
+}
+
+.kiba-sheet.open .kiba-sheet-bg {
+    opacity: 1;
+}
+
+.kiba-sheet-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--kiba-sheet-bg);
+    color: var(--kiba-sheet-text);
+    border-radius: 20px 20px 0 0;
+    padding: 8px 12px calc(22px + env(safe-area-inset-bottom) + var(--kiba-bn)) 12px;
+    max-height: 86dvh;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform .26s cubic-bezier(.4, 0, .2, 1);
+    box-shadow: 0 -12px 40px rgba(2, 6, 23, .35);
+}
+
+.kiba-sheet.open .kiba-sheet-panel {
+    transform: none;
+}
+
+.kiba-sheet-grip {
+    width: 42px;
+    height: 4px;
+    border-radius: 999px;
+    background: #cbd5e1;
+    margin: 4px auto 10px;
+}
+
+.kiba-sheet-title {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 4px 8px 8px;
+}
+
+.kiba-sheet-item {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    width: 100%;
+    padding: 14px 10px;
+    border-radius: 13px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-align: left;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.kiba-sheet-item:active {
+    background: #f1f5f9;
+}
+
+.kiba-sheet-item i {
+    width: 22px;
+    text-align: center;
+    font-size: 15px;
+    color: #2563eb;
+}
+
+.kiba-sheet-item.danger,
+.kiba-sheet-item.danger i {
+    color: #e11d48;
+}
+
+body.dark .kiba-sheet-panel {
+    background: #111c33;
+    color: #e2e8f0;
+}
+
+body.dark .kiba-sheet-grip {
+    background: #334155;
+}
+
+body.dark .kiba-sheet-title {
+    color: #94a3b8;
+}
+
+body.dark .kiba-sheet-item:active {
+    background: #1b2740;
+}
+
+body.dark .kiba-sheet-item i {
+    color: #93c5fd;
+}
+
+/* Güncelleme bildirimi (yeni sürüm hazır) */
+#kibaUpdateBar {
+    display: none;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(var(--kiba-bn) + 16px + env(safe-area-inset-bottom));
+    z-index: 46;
+    background: #1d4ed8;
+    color: #fff;
+    border-radius: 14px;
+    padding: 11px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 10px 26px rgba(29, 78, 216, .4);
+}
+
+#kibaUpdateBar.show {
+    display: flex;
+}
+
+#kibaUpdateBar button {
+    margin-left: auto;
+    background: #fff;
+    color: #1d4ed8;
+    border: 0;
+    border-radius: 9px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+/* Yazdırmada yeni arayüz öğeleri görünmesin */
+@media print {
+    .kiba-appbar,
+    .kiba-bn,
+    .kiba-fab,
+    .kiba-scrim,
+    .kiba-sheet,
+    .kiba-mlist,
+    #kibaTip,
+    #kibaUpdateBar,
+    #kibaDrawerClose {
+        display: none !important;
+    }
+
+    /* Mobilde ekranda gizlenen tablo, yazdırmada mutlaka görünür */
+    .kiba-table-wrap,
+    html.mobile-layout .kiba-table-wrap,
+    html.mobile-layout .overflow-x-auto {
+        display: block !important;
+        overflow: visible !important;
+    }
+
+    html.mobile-layout #contentArea {
+        padding: 0 !important;
+    }
+
+    html.mobile-layout aside.no-print {
+        display: none !important;
+    }
+}
